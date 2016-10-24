@@ -1,0 +1,3 @@
+requests
+sparql-client
+-e git+git://github.com/blazegraph/blazegraph-python.git#egg=pymantic

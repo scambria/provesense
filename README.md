@@ -1,2 +1,2 @@
 # provesense
-Provesense - Maintain sensor data provenance at big data scale
+Highly scalable platform to maintain sensor data provenance
