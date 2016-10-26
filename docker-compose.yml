@@ -1,11 +1,7 @@
 version: '2'
 services:
 
-#  lodmilla:
-#    image: scambria/lodmilla-frontend
-#    ports:
-#      - "9999:80"
-    
+  #For bootstrapping the graph database    
   provesense:
     build: .
     environment:
@@ -18,6 +14,12 @@ services:
 #     - redis
 #    restart: always
 
+  #viz
+  lodmilla:
+    image: scambria/lodmilla-frontend
+    ports:
+      - "9998:80"
+  #API
   provesense-api:
     image: scambria/provesense-api:latest
     ports:
@@ -25,18 +27,16 @@ services:
     environment:
       SPARQL_ENDPOINT: http://blazegraph:9999/blazegraph/sparql
 
-#  redis:
-#    image: redis
-
+  #graph database
   blazegraph:
     image: nicholsn/docker-blazegraph
     ports: 
       - "9999:9999"
     volumes:
-      - ./ingest:/tmp/ingest
       - .:/tmp/blazegraph
       - ./bootstrap:/tmp/bootstrap
 
+  #kafka + zookeeper
   kafka:
     image: spotify/kafka
     ports:
@@ -46,14 +46,15 @@ services:
       - ADVERTISED_HOST=kafka
       - ADVERTISED_PORT=9092    
     restart: always
-            
+
+  #Spark streaming master + 3 workers for ingestion            
   master:
-    build: spark/master
+    image: scambria/provesense-ingest
+#TODO: submit job when container starts; this approach fails
 #    command: bin/spark-class org.apache.spark.deploy.master.Master -h master \
 #            && bin/spark-submit --jars \
-#            | external/kafka-assembly/target/scala-*/spark-streaming-kafka-assembly-*.jar \ 
-#            | examples/src/main/python/streaming/direct_kafka_wordcount.py \
-#            | kafka:9092 provesense.inbound                  
+#            | ./jars/spark-streaming-kafka-0-8-assembly_2.11-2.1.0-SNAPSHOT.jar \ 
+#            | python/direct_stream.py kafka:9092 provesense.inbound
     command: bin/spark-class org.apache.spark.deploy.master.Master -h master 
     hostname: master
     environment:
@@ -82,7 +83,6 @@ services:
       - 7077:7077
       - 8080:8080
     volumes:
-      - ./conf/worker:/conf
       - ./data:/tmp/data      
       - ./ingest:/tmp/ingest      
       - ./spark:/usr/app
@@ -91,22 +91,10 @@ services:
       - blazegraph
     restart: always
 
-#    entrypoint: |
-#      bash -c 'bash -s <<EOF
-#      trap "break;exit" SIGHUP SIGINT SIGTERM
-#      while /bin/true; do
-#        su -s "/bin/bash" -c "bin/spark-submit --jars " \
-#         "external/kafka-assembly/target/scala-*/spark-streaming-kafka-assembly-*.jar " \ 
-#         "examples/src/main/python/streaming/direct_kafka_wordcount.py " \
-#         "kafka:9092 provesense.inbound"
-#        sleep 3600
-#      done
-#      EOF'
-  worker:
-#    image: gettyimages/spark
-    build: spark/worker
+  worker1:
+    image: scambria/provesense-ingest
     command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077 
-    hostname: worker
+    hostname: worker1
     environment:
       SPARK_CONF_DIR: /conf
       SPARK_WORKER_CORES: 2
@@ -115,12 +103,6 @@ services:
       SPARK_WORKER_WEBUI_PORT: 8081
       SPARK_PUBLIC_DNS: localhost
       SPARQL_ENDPOINT: http://blazegraph:9999/blazegraph/sparql      
-      LOGGER_NAME: provesense-spark
-      LOG_DIR: /var/log/provesense
-      LOG_FILE: provesense-spark.log
-      LOG_STDOUT: 'False'
-      LOG_JSON: 'True'
-      LOG_LEVEL: DEBUG            
     links:
       - master
     expose:
@@ -133,16 +115,14 @@ services:
     ports:
       - 8081:8081
     volumes:
-      - ./conf/worker:/conf
-      - ./data:/tmp/data 
+      - ./data:/tmp/data
       - ./logs:/usr/spark-2.0.1/work
     depends_on:
       - master
-    restart: always
+    restart: always 
     
   worker2:
-#    image: gettyimages/spark
-    build: spark/worker
+    image: scambria/provesense-ingest
     command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077 
     hostname: worker2
     environment:
@@ -153,12 +133,6 @@ services:
       SPARK_WORKER_WEBUI_PORT: 8081
       SPARK_PUBLIC_DNS: localhost
       SPARQL_ENDPOINT: http://blazegraph:9999/blazegraph/sparql      
-      LOGGER_NAME: provesense-spark
-      LOG_DIR: /var/log/provesense
-      LOG_FILE: provesense-spark.log
-      LOG_STDOUT: 'False'
-      LOG_JSON: 'True'
-      LOG_LEVEL: DEBUG            
     links:
       - master
     expose:
@@ -171,16 +145,14 @@ services:
     ports:
       - 8082:8081
     volumes:
-      - ./conf/worker:/conf
       - ./data:/tmp/data
       - ./logs:/usr/spark-2.0.1/work
     depends_on:
       - master
-    restart: always    
+    restart: always 
     
   worker3:
-#    image: gettyimages/spark
-    build: spark/worker
+    image: scambria/provesense-ingest
     command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077 
     hostname: worker3
     environment:
@@ -191,12 +163,6 @@ services:
       SPARK_WORKER_WEBUI_PORT: 8081
       SPARK_PUBLIC_DNS: localhost
       SPARQL_ENDPOINT: http://blazegraph:9999/blazegraph/sparql      
-      LOGGER_NAME: provesense-spark
-      LOG_DIR: /var/log/provesense
-      LOG_FILE: provesense-spark.log
-      LOG_STDOUT: 'False'
-      LOG_JSON: 'True'
-      LOG_LEVEL: DEBUG            
     links:
       - master
     expose:
@@ -209,13 +175,16 @@ services:
     ports:
       - 8083:8081
     volumes:
-      - ./conf/worker:/conf
       - ./data:/tmp/data
       - ./logs:/usr/spark-2.0.1/work
     depends_on:
       - master
     restart: always 
-    
+
+#  redis:
+#    image: redis
+
+#ELK for logging    
   elasticsearch:
 #    image: elasticsearch:5.0.0-rc1
     image: elasticsearch:latest 
@@ -238,10 +207,13 @@ services:
       
   kibana:
 #    image: kibana:5.0.0-rc1
-    image: kibana:latest
+    image: kibana:latest #v4
 #    volumes:
 #      - ./elk:/opt/kibana/config/
     ports:
       - "5601:5601"
     depends_on:
       - elasticsearch
+
+      
+      
