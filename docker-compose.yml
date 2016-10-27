@@ -206,8 +206,7 @@ services:
       - elasticsearch
       
   kibana:
-#    image: kibana:5.0.0-rc1
-    image: kibana:latest #v4
+    image: kibana:latest 
 #    volumes:
 #      - ./elk:/opt/kibana/config/
     ports:

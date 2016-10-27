@@ -1,9 +1,12 @@
 Quickstart
 ==========
 
-Prerequisites
--------------
-To run provesense, you will need Docker and Docker Compose installed. The installation guide is here - https://docs.docker.com/compose/install/
+Dependencies
+------------
+To run provesense, you will need 
+
+ - Docker and Docker Compose - https://docs.docker.com/compose/install/
+ - Git client - https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 
 Download, Install, and Run
 --------------------------
@@ -12,7 +15,7 @@ Download, Install, and Run
 
 ::
 
-   git clone git@github.com:scambria/provesense.git
+   git clone https://github.com/scambria/provesense.git
 
 - Build and run the code w/ docker compose:
 
