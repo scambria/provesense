@@ -179,16 +179,16 @@ services:
       - ./logs:/usr/spark-2.0.1/work
     depends_on:
       - master
-    restart: always 
+    restart: always
 
 #  redis:
 #    image: redis
 
 #ELK for logging    
+#may need to run `sudo sysctl -w vm.max_map_count=262144` on the host prior to booting
   elasticsearch:
-#    image: elasticsearch:5.0.0-rc1
     image: elasticsearch:latest 
-    command: elasticsearch -Des.network.host=0.0.0.0
+    command: elasticsearch 
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -197,7 +197,7 @@ services:
     image: logstash:latest
     command: logstash -f /etc/logstash/conf.d/logstash.conf
     volumes:
-      - ./logs:/var/log/
+      - ./logs:/tmp/logs
       - ./elk/spark-logstash.conf:/etc/logstash/conf.d/logstash.conf
       - ./elk/logs-template.json:/etc/logstash/templates/logs-template.json      
     ports:
