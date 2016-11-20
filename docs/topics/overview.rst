@@ -68,9 +68,9 @@ Logging
 ELK stack leveraged to capture, store, and visualize important system and application-level logs, including the spark ingestion framework, the provesense web service, the rules and alerting framework, and the blazegraph database.
 
  - Visualizations include graphs providing insight into:
-   - Sensor types
-   - Observed events
-   - Entity/Activity/Sensor timelines
+    - Sensor types
+    - Observed events
+    - Entity/Activity/Sensor timelines
 
 Deployment
 ^^^^^^^^^^

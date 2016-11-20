@@ -16,9 +16,19 @@ services:
 
   #viz
   lodmilla:
-    image: scambria/lodmilla-frontend
+    image: scambria/lodmilla-frontend:provesense
     ports:
       - "9998:80"
+
+  ld-r:
+    image: scambria/ld-r
+    ports: 
+      - "4000:4000"
+    volumes:
+      - ./ld-r-configs:/ld-r/configs
+      - ./ld-r-services:/ld-r/services
+    restart: always
+      
   #API
   provesense-api:
     image: scambria/provesense-api:latest
@@ -186,33 +196,35 @@ services:
 
 #ELK for logging    
 #may need to run `sudo sysctl -w vm.max_map_count=262144` on the host prior to booting
-  elasticsearch:
-    image: elasticsearch:latest 
-    command: elasticsearch 
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-  
-  logstash:
-    image: logstash:latest
-    command: logstash -f /etc/logstash/conf.d/logstash.conf
-    volumes:
-      - ./logs:/tmp/logs
-      - ./elk/spark-logstash.conf:/etc/logstash/conf.d/logstash.conf
-      - ./elk/logs-template.json:/etc/logstash/templates/logs-template.json      
-    ports:
-      - "5000:5000"
-    depends_on:
-      - elasticsearch
+#  elasticsearch:
+#    image: elasticsearch:latest 
+#    command: elasticsearch 
+#    ports:
+#      - "9200:9200"
+#      - "9300:9300"
+#    restart: always 
       
-  kibana:
-    image: kibana:latest 
+#  logstash:
+#    image: logstash:latest
+#    command: logstash -f /etc/logstash/conf.d/logstash.conf
+#    volumes:
+#      - ./logs:/tmp/logs
+#      - ./elk/spark-logstash.conf:/etc/logstash/conf.d/logstash.conf
+#      - ./elk/logs-template.json:/etc/logstash/templates/logs-template.json      
+#    ports:
+#      - "5000:5000"
+#    depends_on:
+#      - elasticsearch
+#    restart: always       
+      
+#  kibana:
+#    image: kibana:latest 
 #    volumes:
 #      - ./elk:/opt/kibana/config/
-    ports:
-      - "5601:5601"
-    depends_on:
-      - elasticsearch
-
+#    ports:
+#      - "5601:5601"
+#    depends_on:
+#      - elasticsearch
+#    restart: always 
       
       
