@@ -7,7 +7,7 @@ services:
     environment:
       SPARQL_ENDPOINT: http://blazegraph:9999/blazegraph/sparql
     volumes:
-     - .:/code
+#     - .:/code
      - ./bootstrap:/tmp/bootstrap
     depends_on:
      - blazegraph    
